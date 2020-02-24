@@ -35,6 +35,40 @@ enum {
   BottomBorderOffset = 1
 };
 
+static Ivar titleView_ivar(void)
+{
+  static Ivar iv;
+  if (iv == NULL)
+    {
+      iv = class_getInstanceVariable([NSMenuView class], "_titleView");
+      NSCAssert(iv, @"Unable to find _titleView instance variable of NSMenuView.");
+    }
+  return iv;
+}
+
+static Ivar itemsLink_ivar(void)
+{
+  static Ivar iv;
+  if (iv == NULL)
+    {
+      iv = class_getInstanceVariable([NSMenuView class], "_items_link");
+      NSCAssert(iv, @"Unable to find _items_link instance variable of NSMenuView.");
+    }
+  return iv;
+}
+
+static Ivar attachedMenu_ivar(void)
+{
+  static Ivar iv;
+  if (iv == NULL)
+    {
+      iv = class_getInstanceVariable([NSMenuView class], "_attachedMenu");
+      NSCAssert(iv, @"Unable to find _attachedMenu instance variable of NSMenuView.");
+    }
+  return iv;
+}
+
+
 @interface NSMenuView (Private)
 - (CGFloat) yOriginForItem:(int)item;
 - (CGFloat) totalHeight;
@@ -42,6 +76,50 @@ enum {
 @end
 
 @implementation NSMenuView (Hackery)
+
+- (id) titleView
+{
+  return object_getIvar(self, titleView_ivar());
+}
+
+- (void) setTitleView: (id)aView
+{
+  object_setIvar(self, titleView_ivar(), aView);
+}
+
+- (id) itemsLink
+{
+  return object_getIvar(self, itemsLink_ivar());
+}
+
+- (void) setItemsLink: (id)anItemsLink
+{
+  object_setIvar(self, itemsLink_ivar(), anItemsLink);
+}
+
+- (NSMenu*) attachedMenu
+{
+  return object_getIvar(self, attachedMenu_ivar());
+}
+
+- (void) setAttachedMenu: (NSMenu*)aMenu
+{
+  object_setIvar(self, attachedMenu_ivar(), aMenu);
+}
+
+- (int) leftBorderOffset
+{
+  void* ptr;
+  object_getInstanceVariable(self, "_leftBorderOffset", &ptr);
+  return *(int *)ptr;
+}
+
+- (void) setleftBorderOffset: (int)anInt
+{
+  unsigned int addr = (unsigned int)&anInt;
+  object_setInstanceVariable(self, "_leftBorderOffset", *(int**)&addr);
+}
+
 - (NSRect) rectOfItemAtIndex: (int)index
 {
   NSRect theRect;
@@ -57,7 +135,7 @@ enum {
   
   if (_horizontal == NO)
     { 
-      if (![_attachedMenu _ownedByPopUp])
+      if (![self.attachedMenu _ownedByPopUp])
         {
 		  	theRect.origin.y = 1 + [self yOriginForItem: index];
           	theRect.origin.x = 1;
@@ -66,7 +144,9 @@ enum {
       else
         {
 			theRect.origin.y = [self yOriginForItem: index];
-			theRect.origin.x = _leftBorderOffset;
+			NSLog(@"Got before set.");
+			theRect.origin.x = self.leftBorderOffset;
+			NSLog(@"Got AFTER set.");
         }
     }
   else
@@ -99,7 +179,7 @@ enum {
   if (_horizontal == YES)
     {
       NSRect aRect = [self rectOfItemAtIndex:
-                       [_attachedMenu indexOfItemWithSubmenu: aSubmenu]];
+                       [self.attachedMenu indexOfItemWithSubmenu: aSubmenu]];
       NSPoint subOrigin = [_window convertBaseToScreen:
                                     NSMakePoint(NSMinX(aRect),
                                     NSMinY(aRect))];
@@ -109,7 +189,7 @@ enum {
   else
     {
       NSRect aRect = [self rectOfItemAtIndex:
-            [_attachedMenu indexOfItemWithSubmenu: aSubmenu]];
+            [self.attachedMenu indexOfItemWithSubmenu: aSubmenu]];
       NSPoint subOrigin = [_window convertBaseToScreen:
             NSMakePoint(aRect.origin.x, aRect.origin.y)];
 
@@ -131,15 +211,15 @@ enum {
   float    popupImageWidth = 0.0;
 
   // Popup menu doesn't need title bar
-  if (![_attachedMenu _ownedByPopUp])
+  if (![self.attachedMenu _ownedByPopUp])
     {
-        if ([_attachedMenu supermenu] != nil)
+        if ([self.attachedMenu supermenu] != nil)
         {
 //             @try
 //             {
-//                 NSMenuItemCell *msr = [[[_attachedMenu supermenu] menuRepresentation] 
+//                 NSMenuItemCell *msr = [[[self.attachedMenu supermenu] menuRepresentation] 
 //                                           menuItemCellForItemAtIndex:
-//                                               [[_attachedMenu supermenu] indexOfItemWithTitle: [_attachedMenu title]]];
+//                                               [[self.attachedMenu supermenu] indexOfItemWithTitle: [self.attachedMenu title]]];
 //                 neededImageAndTitleWidth += [msr titleWidth] + GSCellTextImageXDist;
 //             }
 //             @catch(id e)
@@ -245,7 +325,7 @@ enum {
         }
       accumulatedOffset += neededKeyEquivalentWidth + _horizontalEdgePad;
         
-      if ([_attachedMenu supermenu] != nil && neededKeyEquivalentWidth < 8)
+      if ([self.attachedMenu supermenu] != nil && neededKeyEquivalentWidth < 8)
         {
           accumulatedOffset += 8 - neededKeyEquivalentWidth;
         }
@@ -253,13 +333,13 @@ enum {
   else
     {
       accumulatedOffset += neededImageAndTitleWidth + 3 + 2;
-      if ([_attachedMenu supermenu] != nil)
+      if ([self.attachedMenu supermenu] != nil)
         accumulatedOffset += 15;
         accumulatedOffset += 15;
     }
 
   // Calculate frame size.
-  if (![_attachedMenu _ownedByPopUp])
+  if (![self.attachedMenu _ownedByPopUp])
     {
       // Add the border width: 1 for left, 2 for right sides
       _cellSize.width = accumulatedOffset + 3;
@@ -272,16 +352,16 @@ enum {
   if (_horizontal == YES)
     {
       [self setFrameSize: NSMakeSize(((howMany + 1) * _cellSize.width),
-                                      [self heightForItem: 0] + _leftBorderOffset)];
-      [_titleView setFrame: NSMakeRect (0, 0,
+                                      [self heightForItem: 0] + self.leftBorderOffset)];
+      [self.titleView setFrame: NSMakeRect (0, 0,
                                         _cellSize.width,  [self heightForItem: 0] + 1)];
     }
   else
     {
-      [self setFrameSize: NSMakeSize(_cellSize.width + _leftBorderOffset,
+      [self setFrameSize: NSMakeSize(_cellSize.width + self.leftBorderOffset,
         [self totalHeight] + [EtoileMenuTitleView height] +
         BottomBorderOffset)];
-      [_titleView setFrame: NSMakeRect (0, [self totalHeight] +
+      [self.titleView setFrame: NSMakeRect (0, [self totalHeight] +
         BottomBorderOffset, NSWidth (_bounds), [EtoileMenuTitleView height])];
     }
      
@@ -292,41 +372,41 @@ enum {
 {
   if ([self isHorizontal])
     {
-      if (_titleView != nil)
+      if (self.titleView != nil)
         {
-          [_titleView removeFromSuperview];
-          _titleView = nil;
+          [self.titleView removeFromSuperview];
+          self.titleView = nil;
         }
     }
   else
     {
-      if (![_attachedMenu _ownedByPopUp] && !_titleView)
+      if (![self.attachedMenu _ownedByPopUp] && !self.titleView)
         {
-          _titleView = [[EtoileMenuTitleView alloc]
-            initWithOwner:_attachedMenu];
-          [self addSubview: _titleView];
-          RELEASE(_titleView);
+          self.titleView = [[EtoileMenuTitleView alloc]
+            initWithOwner:self.attachedMenu];
+          [self addSubview: self.titleView];
+          RELEASE(self.titleView);
         }
-      else if ([_attachedMenu _ownedByPopUp] && _titleView)
+      else if ([self.attachedMenu _ownedByPopUp] && self.titleView)
         {
-          [_titleView removeFromSuperview];
-          _titleView = nil;
+          [self.titleView removeFromSuperview];
+          self.titleView = nil;
         }
 
       [self sizeToFit];
 
-      if ([_attachedMenu _ownedByPopUp] == NO)
+      if ([self.attachedMenu _ownedByPopUp] == NO)
         {
-          if ([_attachedMenu isTornOff] && ![_attachedMenu isTransient])
+          if ([self.attachedMenu isTornOff] && ![self.attachedMenu isTransient])
             {
-              [_titleView
+              [self.titleView
                 addCloseButtonWithAction: @selector(_performMenuClose:)];
-              [_titleView setTitleVisible: YES];
+              [self.titleView setTitleVisible: YES];
             }
           else
             {
-              [_titleView removeCloseButton];
-              [_titleView setTitleVisible: NO];
+              [self.titleView removeCloseButton];
+              [self.titleView setTitleVisible: NO];
             }
         }
     }
@@ -338,7 +418,7 @@ enum {
   int        i;
   int        howMany = [_itemCells count];
 
-  if (![_attachedMenu _ownedByPopUp])
+  if (![self.attachedMenu _ownedByPopUp])
     {
       NSDrawButton (_bounds, rect);
     }
@@ -398,7 +478,7 @@ enum {
    * Only for non transient menus do we want
    * to remember the position.
    */ 
-  restorePosition = ![_attachedMenu isTransient];
+  restorePosition = ![self.attachedMenu isTransient];
   if (restorePosition)
     { // store old position;
       originalFrame = [_window frame];
@@ -422,7 +502,7 @@ enum {
           
           origin.x += (originalTopLeft.x - currentTopLeft.x);
           origin.y += (originalTopLeft.y - currentTopLeft.y);
-          [_attachedMenu nestedSetFrameOrigin: origin];
+          [self.attachedMenu nestedSetFrameOrigin: origin];
         }
     }
 }
@@ -533,7 +613,7 @@ static BOOL grabbed = NO;
            * 1 - if menus is only partly visible and the mouse is at the
            *     edge of the screen we move the menu so it will be visible.
            */ 
-          if ([_attachedMenu isPartlyOffScreen])
+          if ([self.attachedMenu isPartlyOffScreen])
             {
               NSPoint pointerLoc = [_window convertBaseToScreen: location];
               /*
@@ -544,7 +624,7 @@ static BOOL grabbed = NO;
               if (pointerLoc.x == 0 || pointerLoc.y == 1
                 || pointerLoc.x == [[_window screen] frame].size.width - 1
                 || pointerLoc.y == [[_window screen] frame].size.height)
-                [_attachedMenu shiftOnScreen];
+                [self.attachedMenu shiftOnScreen];
             }
 
 
@@ -590,7 +670,7 @@ static BOOL grabbed = NO;
                *          We are a non-transient attached menu
                *          We are a root: isTornOff of AppMenu
                */
-              candidateMenu = [_attachedMenu supermenu];
+              candidateMenu = [self.attachedMenu supermenu];
               while (candidateMenu  
                 && !NSMouseInRect (locationInScreenCoordinates, 
                 [[candidateMenu window] frame], NO) // not found yet
@@ -626,18 +706,18 @@ static BOOL grabbed = NO;
                 }
 
               // 3b - Check if we enter the attached submenu
-              windowUnderMouse = [[_attachedMenu attachedMenu] window];
+              windowUnderMouse = [[self.attachedMenu attachedMenu] window];
               if (windowUnderMouse != nil
                 && NSMouseInRect (locationInScreenCoordinates,
                 [windowUnderMouse frame], NO))
                 {
-                  BOOL wasTransient = [_attachedMenu isTransient];
+                  BOOL wasTransient = [self.attachedMenu isTransient];
                   BOOL subMenuResult;
 
                   subMenuResult
                     = [[self attachedMenuView] trackWithEvent: original];
                   if (subMenuResult
-                    && wasTransient == [_attachedMenu isTransient])
+                    && wasTransient == [self.attachedMenu isTransient])
                     {
                       [self detachSubmenu];
                     }
@@ -652,8 +732,8 @@ static BOOL grabbed = NO;
               [self detachSubmenu];
               [self setHighlightedItemIndex: index];
 
-              // WO: Question?  Why the ivar _items_link
-              if (index >= 0 && [[_items_link objectAtIndex: index] submenu])
+              // WO: Question?  Why the ivar/property self.itemsLink
+              if (index >= 0 && [[self.itemsLink objectAtIndex: index] submenu])
                 {
                   [self attachSubmenuForItemAtIndex: index];
                   justAttachedNewSubmenu = YES;
@@ -717,7 +797,7 @@ static BOOL grabbed = NO;
 
   // remove transient menus. --------------------------------------------
     {
-      NSMenu *currentMenu = _attachedMenu;
+      NSMenu *currentMenu = self.attachedMenu;
 
       while (currentMenu && ![currentMenu isTransient])
         {
@@ -744,8 +824,8 @@ static BOOL grabbed = NO;
     }
 
   if (indexOfActionToExecute >= 0
-    && [_attachedMenu attachedMenu] != nil && [_attachedMenu attachedMenu] ==
-    [[_items_link objectAtIndex: indexOfActionToExecute] submenu])
+    && [self.attachedMenu attachedMenu] != nil && [self.attachedMenu attachedMenu] ==
+    [[self.itemsLink objectAtIndex: indexOfActionToExecute] submenu])
     {
 #if 1
       //if (NSInterfaceStyleForKey(@"NSMenuInterfaceStyle", self)
@@ -770,7 +850,7 @@ static BOOL grabbed = NO;
   //if (NSInterfaceStyleForKey(@"NSMenuInterfaceStyle", self)
   //  == NSMacintoshInterfaceStyle)
     {
-      NSMenu    *tmp = _attachedMenu;
+      NSMenu    *tmp = self.attachedMenu;
 
       do
     {
@@ -783,7 +863,7 @@ static BOOL grabbed = NO;
       while (tmp != nil);
     }
 
-  [_attachedMenu performActionForItemAtIndex: indexOfActionToExecute];
+  [self.attachedMenu performActionForItemAtIndex: indexOfActionToExecute];
 
   /*
    * Remove highlighting.

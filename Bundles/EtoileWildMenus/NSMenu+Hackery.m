@@ -29,6 +29,29 @@
 #import "NSMenu+Hackery.h"
 #import "MenuBarHeight.h"
 
+static Ivar aWindow_ivar(void)
+{
+  static Ivar iv;
+  if (iv == NULL)
+    {
+      iv = class_getInstanceVariable([NSMenu class], "_aWindow");
+      NSCAssert(iv, @"Unable to find _aWindow instance variable of NSMenu.");
+    }
+  return iv;
+}
+
+static Ivar bWindow_ivar(void)
+{
+  static Ivar iv;
+  if (iv == NULL)
+    {
+      iv = class_getInstanceVariable([NSMenu class], "_bWindow");
+      NSCAssert(iv, @"Unable to find _bWindow instance variable of NSMenu.");
+    }
+  return iv;
+}
+
+
 @interface NSMenu (EtoilePrivate)
 - (NSRect) _menuServerWindowFrame;
 @end
@@ -44,6 +67,26 @@
 #define _horizontal (_menu.horizontal)
 
 @implementation NSMenu (HorizontalHackery)
+
+- (NSWindow*) aWindow
+{
+  return object_getIvar(self, aWindow_ivar());
+}
+
+- (void) setaWindow: (NSWindow*)aWindow
+{
+  object_setIvar(self, aWindow_ivar(), aWindow);
+}
+
+- (NSWindow*) bWindow
+{
+  return object_getIvar(self, bWindow_ivar());
+}
+
+- (void) setbWindow: (NSWindow*)aWindow
+{
+  object_setIvar(self, bWindow_ivar(), aWindow);
+}
 
 - (void) _setGeometry
 {
@@ -71,11 +114,11 @@
   else /* Fall back on screen frame */
     {
       origin = NSMakePoint (1.5 * MenuBarHeight,
-        [[NSScreen mainScreen] frame].size.height - [_aWindow frame].size.height);
+        [[NSScreen mainScreen] frame].size.height - [self.aWindow frame].size.height);
     }
 
-  [_aWindow setFrameOrigin: origin];
-  [_bWindow setFrameOrigin: origin];
+  [self.aWindow setFrameOrigin: origin];
+  [self.bWindow setFrameOrigin: origin];
 }
 
 /* Requests menu bar window rect to EtoileMenuServer process. */

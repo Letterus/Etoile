@@ -21,7 +21,9 @@
 /**
  * Macro for creating dealloc methods.
  */
+#ifndef DEALLOC
 #define DEALLOC(x) - (void) dealloc { x ; [super dealloc]; }
+#endif
 
 @protocol MakeReleaseSelectorNotFoundErrorGoAway
 - (void) release;

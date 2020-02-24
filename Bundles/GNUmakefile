@@ -9,11 +9,11 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 -include ../modules.make
 
-export etoilebehavior ?= yes
+export etoilebehavior ?= no
 export etoilewildmenus ?= yes
-export powermenulet ?= no
-export servicemenulet ?= no
-export volumecontrolmenulet ?= no
+export powermenulet ?= yes
+export servicemenulet ?= yes
+export volumecontrolmenulet ?= yes
 
 #
 # Projects (listed by dependency order, then alphabetical order)

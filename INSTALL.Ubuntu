@@ -20,38 +20,42 @@ Main Dependencies
 Ubuntu 10.4 to 13.04 (Lucid Lynx to Raring Ringtail)
 ----------------------------------------------------
 
- * gobjc
- * libxml2-dev
- * libxslt1-dev
- * libffi-dev
- * libssl-dev
- * libgnutls-dev
- * libicu-dev
- * libjpeg62-dev
- * libtiff4-dev
- * libpng12-dev
- * libgif-dev
- * libfreetype6-dev
- * libx11-dev
- * libcairo2-dev
- * libxft-dev
- * libxmu-dev
- * dbus
- * libdbus-1-dev
- * hal
- * libstartup-notification0-dev
- * libxcursor-dev
- * libxss-dev
- * xscreensaver
- * g++
- * libpoppler-dev
- * libonig-dev
- * lemon
- * libgmp3-dev
- * libsqlite3-dev
- * libavcodec-dev
- * libavformat-dev
- * libtagc0-dev
- * libmp4v2-dev (multiverse package in Lucid Lynx)
- * discount (available in Precise Pangolin or later)
- * libgraphviz-dev
+Not available on 19.10: libgnutls-dev -> libgnutls28-dev
+ hal libmp4v2-dev
+
+libxml2-dev libxslt1-dev libffi-dev libssl-dev libicu-dev libjpeg62-dev
+libtiff-dev libpng-dev libgif-dev libfreetype6-dev libx11-dev libcairo2-dev
+libxft-dev libxmu-dev dbus libdbus-1-dev libstartup-notification0-dev
+libxcursor-dev libxss-dev xscreensaver g++ libpoppler-dev libonig-dev
+lemon libgmp3-dev libsqlite3-dev libavcodec-dev libavformat-dev libtagc0-dev
+ discount libgraphviz-dev
+
+## Install Bundles
+
+1. Install dependencies (from above)
+2. Install EtoileFoundation
+3. Install SystemConfig
+4. Bundles: Deactivate behaviour
+	make; make install
+
+defaults write NSGlobalDomain GSAppKitUserBundles "(/usr/GNUstep/System/Library/Bundles/EtoileMenus.bundle)"
+defaults write NSGlobalDomain NSUseRunningCopy YES
+
+
+## Only WildMenus:
+
+1. Patch etoile.make
+2. Install Wildmenus
+3. Install XWindowServerKit
+4. Install MenuServer
+5. Install Subprojects
+
+
+Results in (2.0 runtime):
+Probably access to private ivars as well - will only work using 1.9 it seems.
+
+2019-11-24 21:55:02.772 SystemPreferences[19746:19746] Loading 1 user defined AppKit bundles
+2019-11-24 21:55:02.773 SystemPreferences[19746:19746] Loaded '/usr/GNUstep/System/Library/Bundles/EtoileMenus.bundle'
+Error (objc-load):/usr/GNUstep/System/Library/Bundles/EtoileMenus.bundle/EtoileMenus: undefined symbol: __objc_ivar_offset_NSMenuView._titleView.
+
+
